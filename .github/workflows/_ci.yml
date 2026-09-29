@@ -45,8 +45,19 @@ jobs:
           elif [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
             only_md=false
           else
-            files="$(git diff --name-only "$BEFORE" "$SHA")"
-            only_md=true
+            # before is the previous branch tip. A rebase or force-push drops it
+            # from the checkout, so fall back to the commit that was just pushed.
+            from=""
+            if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              from="$BEFORE"
+            elif git rev-parse --verify "${SHA}^" >/dev/null 2>&1; then
+              echo "Previous tip $BEFORE is not in this checkout; comparing ${SHA}^"
+              from="${SHA}^"
+            fi
+            if [ -n "$from" ]; then
+              files="$(git diff --name-only "$from" "$SHA")"
+              only_md=true
+            fi
           fi
 
           if [ "$only_md" = true ]; then
