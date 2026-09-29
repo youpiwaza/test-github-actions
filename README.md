@@ -13,6 +13,11 @@ bunx playwright install chromium
 git config core.hooksPath .githooks
 # Le hook `pre-push` lance `test:e2e` avant `git push` (donc avant la PR). `git push --no-verify` le saute. Le check GitHub `gate` ne lance pas Playwright.
 
+# 💥💥💥 🔧 auto merge from dev to main on accepted PR requires a GITHUB_TOKEN
+# cf. tout en bas de ce doc pour la création du token (🔐 compte personnel, pas le repo)
+# 💥 Besoin de gérer le token AVANT
+# gh secret set PROMOTE_TOKEN --repo {owner}/{repo}
+
 # ---
 
 # Tests unitaires
@@ -294,3 +299,42 @@ Mais à voir pour forcer les autres repos à passer (et attendre les résultats)
 Un hook pre-push peut lancer l'E2E si la stack tourne. Facultatif et contournable (`--no-verify`). C'est le check `gate` sur les PR vers `dev`/`main` qui bloque vraiment. Le local est un raccourci, pas l'enforcement.
 
 ✅⚡️ Clairement le plus simple & le moins couteux à mettre en place, ne demande pas un grosse montée en compétences de DevOps, Dans un premier temps on va partir la dessus
+
+---
+
+## Config pour auto-merge dev et main sur tests OK
+
+La PR reste obligatoire. Personne ne clique sur Merge : GitHub merge en squash dès que `gate` est vert et que la branche est à jour.
+
+Une fois par repo (Settings > General > Pull Requests, ou) :
+
+```bash
+gh api --method PATCH repos/{owner}/{repo} -F allow_auto_merge=true
+```
+
+Le workflow [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.yml) lance `gh pr merge --auto --squash` à l'ouverture (et à chaque push) d'une PR vers `dev` ou `main`.
+
+### 🤖♨️ auto merge de dev vers main quand PR dev OK
+
+Un merge `feat-*` vers `dev` ne merge pas `main` tout seul. [`.github/workflows/promote-dev.yml`](.github/workflows/promote-dev.yml) s'exécute quand cette PR est mergée : il ouvre une PR `dev` vers `main` (ou réutilise celle déjà ouverte) et active l'auto-merge. `gate` tourne une seconde fois. Si `dev` est en retard sur `main`, ça attend un rebase.
+
+Les deux workflows utilisent le secret `PROMOTE_TOKEN` (PAT, scope `repo`). Un merge fait avec `GITHUB_TOKEN` ne déclenche pas le workflow suivant.
+
+GitHub does not issue PROMOTE_TOKEN. You create a personal access token, then save that value as an Actions secret. After it is saved, GitHub never shows it again.
+
+1. On GitHub: Settings (your user, not the repo) → Developer settings (note max: colonne de gauche, tout en bas !) → Personal access tokens → Fine-grained tokens → Generate new token.
+2. Resource owner: your user. Repository access: only youpiwaza/test-github-actions.
+3. Permissions: Contents Read and write, Pull requests Read and write. Metadata is included.
+4. Generate, then copy the token once (github_pat_...).
+
+Store it on the repo:
+
+```bash
+# Cela va générer un prompt dans lequel il faudra coller le secret généré ci-dessus
+gh secret set PROMOTE_TOKEN --repo {owner}/{repo}
+```
+
+- `feat-*` vers `dev`, `dev` ou `hfix-*` vers `main` : `guard` refuse le reste.
+- Tests en échec : la PR reste ouverte.
+- Branche en retard sur `dev`/`main` : l'auto-merge attend une mise à jour, il ne rebase pas.
+- Le hook local `test:e2e` n'est pas relancé ici. `gate` ne lance pas Playwright.
