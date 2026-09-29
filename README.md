@@ -12,3 +12,10 @@
   - ✅ Permet de lancer sur pull request ou **push**, à voir pour les merge
     - ✅ Note également pour branches spécifiques
   - ⬆️ Tourne sous npm, voir si moyen d'utiliser bun
+
+### Tuto medium
+
+- ✅⬆️ Adapter
+  - ✅ bun
+  - ✅ TS
+  - 📌 Juste faire un POC afin de confirmer le bon fonctionement de GH actions..
