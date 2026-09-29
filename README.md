@@ -325,3 +325,4 @@ gh secret set PROMOTE_TOKEN --repo {owner}/{repo}
 - Tests en échec : la PR reste ouverte.
 - Branche en retard sur `dev`/`main` : l'auto-merge attend une mise à jour, il ne rebase pas.
 - Le hook local `test:e2e` n'est pas relancé ici. `gate` ne lance pas Playwright.
+
