@@ -63,6 +63,10 @@
 
 💥 Attention, au niveau des règles, on **DOIT** passer par du pull-request afin de forcer les tests pré-merge !
 
+### ⚡️👨‍💻📝 Exceptions
+
+Possibilité de push de la doc, fichiers markdown uniquement, en direct.
+
 ### Branche `main`
 
 Doit rester stable, les tests doivent être effectués avant de merge dedans
@@ -222,6 +226,46 @@ gh pr create --base main --head hfix-1234-XXX
 
 ---
 
-## End to End e2e
+## End to End : ~= tests poussés avec navigateur & calls au back
 
 Pas sûr que ça soit possible en ligne, il faut un back qui tourne.. Voir si moyen d'enforce en local avant l'envoi ?
+
+---
+
+### Specs vs E2E
+
+Les specs (unitaires / composant) restent dans le repo front : pas besoin d'API. L'E2E est possible avec back et front séparés ; Actions n'a besoin que d'une URL HTTP que le navigateur peut appeler.
+
+### ❌ ~~Backend hébergé~~
+
+~~Pointer Playwright/Cypress vers un environnement déjà déployé (`staging`). Job front : build, puis E2E contre cette URL. Pas de clone du back. Inconvénient : on teste le back déployé, pas celui de la PR ; données/auth dédiées ; si staging est down, les PRs front cassent.~~
+
+Yeah non, contraignant à moins d'avoir un vrai circuit DevOps (lorsqu'un PR est accepté sur le back, il est déployé sur le staging afin de rester à jour, PUIS cela trigger les tests du front, etc.)
+
+Clairement faisable mais besoin de temps & des compétences afin de ne pas faire n'importe quoi, c'est un métier x')
+
+### ~❌ Backend démarré dans le job front
+
+Checkout du repo back (`actions/checkout` + PAT), Docker / bun / Nest, attendre le healthcheck, lancer l'E2E. Pinner le commit back (`main`, tag, `BACKEND_SHA`). Plus long, secrets + DB, et il faut choisir quelle version du back booter.
+
+~❌ Moins sécurisé, couteux en temps, etc.
+
+### ~✅ Repo E2E ou workflow réutilisable
+
+Un petit repo (ou `workflow_call`) qui checkout **front et back**, les démarre, lance la suite. Un merge sur `dev`/`main` d'un des deux repos peut le déclencher. Évite de dupliquer le YAML E2E.
+
+~✅ Yeah un repo commun dédié au tests uniquements, DRY, ça pourrait marcher.
+
+Mais à voir pour forcer les autres repos à passer (et attendre les résultats) des tests avant de valider les merge, je sais pas si ni comment c'est possible.
+
+### ~❌ ~~Mocks~~
+
+~~MSW / API enregistrée ≠ E2E. Utile pour l'intégration composant. Les parcours critiques passent par une vraie API (ou Docker).~~
+
+~❌ Je ne recommande pas, clairement sujet à de faux positifs (le test du front passe > le back à été mis à jour mais cela n'est pas répercuté sur le test)
+
+### ✅⚡️ Local avant push
+
+Un hook pre-push peut lancer l'E2E si la stack tourne. Facultatif et contournable (`--no-verify`). C'est le check `gate` sur les PR vers `dev`/`main` qui bloque vraiment. Le local est un raccourci, pas l'enforcement.
+
+✅⚡️ Clairement le plus simple & le moins couteux à mettre en place, ne demande pas un grosse montée en compétences de DevOps, Dans un premier temps on va partir la dessus
