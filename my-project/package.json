@@ -2,6 +2,7 @@
   "name": "my-project",
   "module": "index.ts",
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/bun": "latest"
   },
   "peerDependencies": {
@@ -9,7 +10,9 @@
   },
   "private": true,
   "scripts": {
-    "test": "bun test"
+    "start": "bun server.ts",
+    "test": "bun test ./*.test.ts",
+    "test:e2e": "playwright test"
   },
   "type": "module"
 }

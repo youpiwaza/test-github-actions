@@ -1,5 +1,30 @@
 # Tests and notes about github actions
 
+## Commandes
+
+```bash
+# Installation
+bun i
+bunx playwright install chromium
+
+## ! Forcer les tests e2e en local, à activer une fois par poste
+# POC dans `my-project` : `bun run test:e2e` (Playwright + `Bun.serve`).
+# Une fois par clone :
+git config core.hooksPath .githooks
+# Le hook `pre-push` lance `test:e2e` avant `git push` (donc avant la PR). `git push --no-verify` le saute. Le check GitHub `gate` ne lance pas Playwright.
+
+# ---
+
+# Tests unitaires
+bun run test
+
+# Tests e2e avec browser (POC via bun en serveur & playwright+chromium )
+bun run test:e2e
+
+# Lancer le serveur local > http://localhost:3000/ pour voir la page avec un titre :')
+bun run start
+```
+
 ## 📝 Docs
 
 - ✅ Bases

@@ -1,0 +1,3 @@
+# Note max : 🐛 KO, n'ignore pas les tests e2e...
+[test]
+pathIgnorePatterns = ["e2e/**"]
