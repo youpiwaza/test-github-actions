@@ -7,7 +7,7 @@
 bun i
 bunx playwright install chromium
 
-## ! Forcer les tests e2e en local, à activer une fois par poste
+## ! 💥💥💥 Forcer les tests e2e en local, 💥💥💥 à activer une fois par poste
 # POC dans `my-project` : `bun run test:e2e` (Playwright + `Bun.serve`).
 # Une fois par clone :
 git config core.hooksPath .githooks
