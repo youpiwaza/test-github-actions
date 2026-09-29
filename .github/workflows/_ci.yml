@@ -1,0 +1,20 @@
+name: CI
+
+# Les tests sont triggers quand..
+on:
+  push:
+  pull_request:
+  # Permet de déclencher le workflow manuellement
+  workflow_dispatch:
+
+jobs:
+  install:
+    uses: ./.github/workflows/_install.yml
+
+  maths:
+    needs: install
+    uses: ./.github/workflows/maths.yml
+
+  strings:
+    needs: install
+    uses: ./.github/workflows/strings.yml

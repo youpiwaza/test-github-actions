@@ -29,6 +29,7 @@ Thumbs.db
 package-lock.json
 yarn.lock
 *lock*
+!bun.lock
 ## Optional npm cache directory
 .npm
 

@@ -29,11 +29,11 @@
   - 🚨 Attention, le `.github\workflows\wtv.yml` DOIT être dans le dossier principal, pas dans le dossier applicatif
   - Notes rajoutées dans le fichier concerné
 
-- Possibilité de lancer le (jeu de) test en direct depuis l'onglet `on: workflow_dispatch:`
+- ✅ Possibilité de lancer le (jeu de) test en direct depuis l'onglet `on: workflow_dispatch:`
   - ✅📌 Ok
   - ✅⬆️ Clean warning & deprecations
     - ubuntu-latest va maj ~19 octobre 2026 > message rapide sur le teams général
-    - warning sur node 20 deprecated ? wat > voir si moyen de spécifier la dernière version de manière explicite
+    - ✅FIX: warning sur node 20 deprecated ? wat > voir si moyen de spécifier la dernière version de manière explicite
 
 - ❌ Organisation en sous dossiers ?
   - GitHub Actions does not support nested subfolders inside the .github/workflows/ directory. All workflow configuration files must be stored directly in the flat .github/workflows/ folder at the root of your repository to be recognized and executed
@@ -43,8 +43,22 @@
 
 ## Opti du temps & des artefacts
 
-- Voir si moyen de ubuntu & bun i une seule fois > en faire un artefacts et réutiliser ?
+- ❌ Voir si moyen de ubuntu & bun i une seule fois > en faire un artefacts et réutiliser ?
   - Ne mettre à jour que si les versions dans le package.json sont changées ?
+  - ❌ Complicado et pas forcément utile, il faut que ça tourne au moins une fois
+  - ✅ On peut toutefois utiliser les artefacts en cas de multiples jeux de tests je pense ?
+    - ~ oui : un seul jeu de test, séparé en multiples fichiers plutôt
+  - 📌 Tester implémentation
+    - `_ci.yml` > le fichier global
+    - `_install.yml` > installation à réutiliser
+    - `maths.yml` & `strings.yml`, deux jeux de tests séparés avec quelques fichiers d'illustrations
+    - Juste afin de voir si la structure fonctionne correctement
+
+---
+
+## End to End e2e
+
+Pas sûr que ça soit possible en ligne, il faut un back qui tourne.. Voir si moyen d'enforce en local avant l'envoi ?
 
 ---
 
