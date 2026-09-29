@@ -1,0 +1,49 @@
+name: Promote dev to main
+
+# After a feat-* PR merges into dev, open (or reuse) a dev -> main PR and queue auto-merge.
+# Uses PROMOTE_TOKEN so this run is allowed to start after the feat merge.
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - dev
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'feat-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open dev to main and queue auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.PROMOTE_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "Missing PROMOTE_TOKEN secret."
+            exit 1
+          fi
+
+          existing="$(gh pr list --repo "$REPO" --base main --head dev --state open --json number --jq '.[0].number')"
+          if [ -n "$existing" ]; then
+            url="$(gh pr view "$existing" --repo "$REPO" --json url --jq .url)"
+            echo "Reusing $url"
+          else
+            url="$(gh pr create --repo "$REPO" --base main --head dev --title "Promote dev" --body "Opened after a feat-* merge into dev.")"
+            echo "Opened $url"
+          fi
+
+          set +e
+          out="$(gh pr merge --auto --squash "$url" 2>&1)"
+          code=$?
+          set -e
+          echo "$out"
+          if [ "$code" -eq 0 ]; then
+            exit 0
+          fi
+          echo "$out" | grep -qi 'already' && exit 0
+          exit "$code"
