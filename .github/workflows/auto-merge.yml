@@ -2,6 +2,7 @@ name: Auto-merge
 
 # Enables GitHub auto-merge on PRs into dev or main.
 # The merge happens only after required rules pass (gate, up to date).
+# PROMOTE_TOKEN (a PAT) is required: a merge by GITHUB_TOKEN does not start the next workflow.
 on:
   pull_request:
     types: [opened, reopened, synchronize]
@@ -19,10 +20,14 @@ jobs:
     steps:
       - name: Queue auto-merge
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PROMOTE_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "Missing PROMOTE_TOKEN secret. A merge by GITHUB_TOKEN does not start promote-dev."
+            exit 1
+          fi
           set +e
           out="$(gh pr merge --auto --squash "$PR_URL" 2>&1)"
           code=$?
