@@ -116,6 +116,66 @@ git checkout dev
 git checkout dev && git rebase main
 ```
 
+##### gitflow implementation through terminal `gh` commands
+
+Push `_ci.yml` (with the `gate` job) to `main` **before** creating the ruleset. Direct pushes to `main`/`dev` are blocked afterwards.
+
+```bash
+# Context: repo courant (owner/name)
+gh repo view --json nameWithOwner --jq .nameWithOwner
+
+# Vérifier qu'aucun ruleset n'existe déjà
+gh api repos/{owner}/{repo}/rulesets
+
+# Créer le ruleset : PR obligatoire + check `gate` + branche à jour
+# Remplacer {owner}/{repo} (ex. youpiwaza/test-github-actions)
+gh api --method POST \
+  -H "Accept: application/vnd.github+json" \
+  --input - \
+  repos/{owner}/{repo}/rulesets <<'EOF'
+{
+  "name": "Protect dev and main",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/main", "refs/heads/dev"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false,
+        "allowed_merge_methods": ["merge", "squash", "rebase"]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          { "context": "gate" }
+        ]
+      }
+    }
+  ]
+}
+EOF
+
+# Lister / inspecter
+gh api repos/{owner}/{repo}/rulesets
+# gh api repos/{owner}/{repo}/rulesets/{id}
+
+# 💥⛓️🔐 Désactiver / réactiver : Settings > Rules > Rulesets > Protect dev and main
+# (un PUT partiel sur `enforcement` seul est refusé ; il faut tout le JSON, ou l'UI)
+```
+
 ---
 
 #### Commandes usuelles
