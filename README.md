@@ -19,3 +19,12 @@
   - ✅ bun
   - ✅ TS
   - 📌 Juste faire un POC afin de confirmer le bon fonctionement de GH actions..
+
+---
+
+#### Github > Onglet actions
+
+- Tous les workflows
+  - Inclus "Run Tests" qui est le nom fixé dans le .yml `name: Run Tests`
+  - 🚨 Attention, le `.github\workflows\wtv.yml` DOIT être dans le dossier principal, pas dans le dossier applicatif
+  - Notes rajoutées dans le fichier concerné
