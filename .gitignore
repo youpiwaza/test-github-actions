@@ -1,0 +1,55 @@
+# Exclude generated files & folders
+build/
+dist/
+prod/
+npm-debug.log
+stats.json
+
+# Exclude npm/yarn package folders
+node_modules/
+
+# Bower dependency directory (https://bower.io/)
+bower_components/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Exclude Unit tests reports
+coverage/
+
+## OS generated files
+.DS_Store?
+.DS_Store
+ehthumbs.db
+Thumbs.db
+
+# Exclude package manager files
+package-lock.json
+yarn.lock
+*lock*
+## Optional npm cache directory
+.npm
+
+# IDE's
+.idea
+.projects
+.netbeans
+.metadata
+.project
+.settings
+.svn
+
+# helpers
+*.patch
+.phpstorm.meta.php
+*.phpstorm.meta.php
+
+# Archives
+*.tar.gz
+*.tar.bz2
+*.gz
+*.zip
+*.bz2
+*.rar
