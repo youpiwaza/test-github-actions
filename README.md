@@ -294,3 +294,13 @@ Mais à voir pour forcer les autres repos à passer (et attendre les résultats)
 Un hook pre-push peut lancer l'E2E si la stack tourne. Facultatif et contournable (`--no-verify`). C'est le check `gate` sur les PR vers `dev`/`main` qui bloque vraiment. Le local est un raccourci, pas l'enforcement.
 
 ✅⚡️ Clairement le plus simple & le moins couteux à mettre en place, ne demande pas un grosse montée en compétences de DevOps, Dans un premier temps on va partir la dessus
+
+```bash
+## ! 💥💥💥 Forcer les tests e2e en local, 💥💥💥 à activer une fois par poste
+# POC dans `my-project` : `bun run test:e2e` (Playwright + `Bun.serve`).
+# Une fois par clone :
+git config core.hooksPath .githooks
+# Le hook `pre-push` lance `test:e2e` avant `git push` (donc avant la PR). `git push --no-verify` le saute. Le check GitHub `gate` ne lance pas Playwright.
+```
+
+✅ Note max : Fonctionne également afin de bloquer gitkraken.
