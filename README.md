@@ -41,7 +41,7 @@
 
 ---
 
-## Opti du temps & des artefacts
+## ✅ Opti du temps & des artefacts
 
 - ❌ Voir si moyen de ubuntu & bun i une seule fois > en faire un artefacts et réutiliser ?
   - Ne mettre à jour que si les versions dans le package.json sont changées ?
@@ -56,12 +56,6 @@
   - ✅♻️ Refacto avec include ?
     - dispo dans gitlab (non natif ? chelou, ptet a cause de yml et pas yAml, bref)
     - "rien" dans github mais en fait sous dossier .github/actions/xxx fait pour ça
-
----
-
-## End to End e2e
-
-Pas sûr que ça soit possible en ligne, il faut un back qui tourne.. Voir si moyen d'enforce en local avant l'envoi ?
 
 ---
 
@@ -93,3 +87,43 @@ Virtuellement inutile au vu du CI/CD, mais permettra d'avoir de la versatilité 
 - Exceptionnellement peut être crée à partir de `main` et re-mergée dedans, en vue de correction rapide
   - DOIT toutefois effectuer les tests avant d'être merge, afin de ne pas introduire de nouvelles régréssions lors du FIX
 - Une fois mergée dans `main`, `dev` doit être rebase
+
+---
+
+### Commandes d'implémentations
+
+Git commands
+
+Run these yourself from the repo. Do not create the branches until the workflow change is on main, otherwise dev and the examples will not contain the new CI.
+
+```bash
+git checkout main
+git pull origin main
+
+git checkout -b dev
+git push -u origin dev
+
+git checkout dev
+git checkout -b feat-1234-XXX
+git push -u origin feat-1234-XXX
+
+git checkout main
+git checkout -b hfix-1234-XXX
+git push -u origin hfix-1234-XXX
+
+git checkout main
+```
+
+- feat-1234-XXX is cut from dev.
+- hfix-1234-XXX is cut from main.
+- 💥 After a hotfix lands on main, rebase dev onto main by hand (manual only ! 💥) :
+
+```bash
+git checkout dev && git rebase main
+```
+
+---
+
+## End to End e2e
+
+Pas sûr que ça soit possible en ligne, il faut un back qui tourne.. Voir si moyen d'enforce en local avant l'envoi ?
