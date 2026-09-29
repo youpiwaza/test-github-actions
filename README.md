@@ -61,6 +61,8 @@
 
 ## Intégration du gitflow ~ branches main, dev, features
 
+💥 Attention, au niveau des règles, on **DOIT** passer par du pull-request afin de forcer les tests pré-merge !
+
 ### Branche `main`
 
 Doit rester stable, les tests doivent être effectués avant de merge dedans
@@ -92,7 +94,7 @@ Virtuellement inutile au vu du CI/CD, mais permettra d'avoir de la versatilité 
 
 ### Commandes d'implémentations
 
-Git commands
+#### Mise en place
 
 Run these yourself from the repo. Do not create the branches until the workflow change is on main, otherwise dev and the examples will not contain the new CI.
 
@@ -104,14 +106,6 @@ git checkout -b dev
 git push -u origin dev
 
 git checkout dev
-git checkout -b feat-1234-XXX
-git push -u origin feat-1234-XXX
-
-git checkout main
-git checkout -b hfix-1234-XXX
-git push -u origin hfix-1234-XXX
-
-git checkout main
 ```
 
 - feat-1234-XXX is cut from dev.
@@ -120,6 +114,50 @@ git checkout main
 
 ```bash
 git checkout dev && git rebase main
+```
+
+---
+
+#### Commandes usuelles
+
+```bash
+# Créer une branche de feat
+git checkout dev
+git checkout -b feat-1234-XXX
+git push -u origin feat-1234-XXX
+
+# Créer une branche de hotfix
+git checkout main
+git checkout -b hfix-1234-XXX
+git push -u origin hfix-1234-XXX
+
+# Rebase de dev sur main
+git checkout main
+git pull origin main
+git checkout dev
+git pull origin dev
+git rebase main
+git push --force-with-lease origin dev
+
+# PR de dev vers main
+gh pr create --base main --head dev
+
+# Rebase d'une feat : d'abord dev sur main, puis la feat sur dev
+git checkout main
+git pull origin main
+git checkout dev
+git pull origin dev
+git rebase main
+git push --force-with-lease origin dev
+git checkout feat-1234-XXX
+git rebase dev
+git push --force-with-lease origin feat-1234-XXX
+
+# PR d'une feat vers dev
+gh pr create --base dev --head feat-1234-XXX
+
+# PR d'un hotfix vers main
+gh pr create --base main --head hfix-1234-XXX
 ```
 
 ---

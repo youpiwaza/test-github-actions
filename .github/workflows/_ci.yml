@@ -1,9 +1,13 @@
 name: 1 All tests - CI
 
-# Les tests sont triggers quand..
+# Tests on every push, on any branch (feat-*, hfix-*, and future names).
+# Pre-merge run: pull requests into dev or main only, so those two stay gated.
 on:
   push:
   pull_request:
+    branches:
+      - main
+      - dev
   # Permet de déclencher le workflow manuellement
   workflow_dispatch:
 
@@ -18,3 +22,71 @@ jobs:
   strings:
     needs: install
     uses: ./.github/workflows/strings.yml
+
+  # Pull requests only: allowed source branch, then rebase the target first.
+  # feat-* -> dev ; dev or hfix-* -> main.
+  guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Enforce gitflow
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          case "$BASE_REF" in
+            dev)
+              case "$HEAD_REF" in
+                feat-*) ;;
+                *)
+                  echo "PRs into dev must come from feat-* (got $HEAD_REF)."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            main)
+              case "$HEAD_REF" in
+                dev|hfix-*) ;;
+                *)
+                  echo "PRs into main must come from dev or hfix-* (got $HEAD_REF)."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            *)
+              echo "Unexpected PR target $BASE_REF."
+              exit 1
+              ;;
+          esac
+
+          git fetch origin "$BASE_SHA" "$HEAD_SHA"
+          if ! git merge-base --is-ancestor "$BASE_SHA" "$HEAD_SHA"; then
+            echo "Rebase $HEAD_REF onto $BASE_REF first: $BASE_REF is not an ancestor of $HEAD_REF."
+            exit 1
+          fi
+
+  # Single required check for the dev/main rulesets.
+  # On push, guard is skipped; maths and strings still have to pass.
+  gate:
+    name: gate
+    needs: [maths, strings, guard]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require tests and PR flow
+        run: |
+          set -euo pipefail
+          test "${{ needs.maths.result }}" = success
+          test "${{ needs.strings.result }}" = success
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            test "${{ needs.guard.result }}" = success
+          fi

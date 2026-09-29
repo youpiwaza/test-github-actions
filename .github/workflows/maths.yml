@@ -1,5 +1,6 @@
 name: Maths
 
+# Called from _ci.yml, which owns when this job runs.
 on:
   workflow_call:
 
