@@ -2,6 +2,8 @@ name: 1 All tests - CI
 
 # Tests on every push, on any branch (feat-*, hfix-*, and future names).
 # Pre-merge run: pull requests into dev or main only, so those two stay gated.
+# Markdown-only diffs skip install/maths/strings, but this workflow still runs
+# so the required `gate` check exists (workflow-level paths-ignore would block merges).
 on:
   push:
   pull_request:
@@ -12,19 +14,74 @@ on:
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run_tests: ${{ steps.filter.outputs.run_tests }}
+    steps:
+      - name: Checkout history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        name: Skip tests when only markdown changed
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          only_md=false
+
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            only_md=false
+          elif [ "$EVENT_NAME" = pull_request ]; then
+            git fetch origin "$BASE_SHA" "$HEAD_SHA"
+            files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+            only_md=true
+          elif [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            only_md=false
+          else
+            files="$(git diff --name-only "$BEFORE" "$SHA")"
+            only_md=true
+          fi
+
+          if [ "$only_md" = true ]; then
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$f" in
+                *.md) ;;
+                *) only_md=false; break ;;
+              esac
+            done <<< "${files:-}"
+          fi
+
+          if [ "$only_md" = true ]; then
+            echo "run_tests=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
+          fi
+
   install:
+    needs: changes
+    if: needs.changes.outputs.run_tests == 'true'
     uses: ./.github/workflows/_install.yml
 
   maths:
-    needs: install
+    needs: [changes, install]
+    if: needs.changes.outputs.run_tests == 'true'
     uses: ./.github/workflows/maths.yml
 
   strings:
-    needs: install
+    needs: [changes, install]
+    if: needs.changes.outputs.run_tests == 'true'
     uses: ./.github/workflows/strings.yml
 
   # Pull requests only: allowed source branch, then rebase the target first.
-  # feat-* -> dev ; dev or hfix-* -> main.
+  # feat-* -> dev ; dev or hfix-* -> main. Still runs on markdown-only PRs.
   guard:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -75,16 +132,23 @@ jobs:
           fi
 
   # Single required check for the dev/main rulesets.
-  # On push, guard is skipped; maths and strings still have to pass.
+  # On push, guard is skipped; maths and strings still have to pass when tests run.
   gate:
     name: gate
-    needs: [maths, strings, guard]
+    needs: [changes, maths, strings, guard]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - name: Require tests and PR flow
         run: |
           set -euo pipefail
+          test "${{ needs.changes.result }}" = success
+          if [ "${{ needs.changes.outputs.run_tests }}" != "true" ]; then
+            if [ "${{ github.event_name }}" = pull_request ]; then
+              test "${{ needs.guard.result }}" = success
+            fi
+            exit 0
+          fi
           test "${{ needs.maths.result }}" = success
           test "${{ needs.strings.result }}" = success
           if [ "${{ github.event_name }}" = pull_request ]; then
