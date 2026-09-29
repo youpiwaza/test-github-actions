@@ -48,11 +48,14 @@
   - ❌ Complicado et pas forcément utile, il faut que ça tourne au moins une fois
   - ✅ On peut toutefois utiliser les artefacts en cas de multiples jeux de tests je pense ?
     - ~ oui : un seul jeu de test, séparé en multiples fichiers plutôt
-  - 📌 Tester implémentation
+  - ✅📌 Tester implémentation
     - `_ci.yml` > le fichier global
     - `_install.yml` > installation à réutiliser
     - `maths.yml` & `strings.yml`, deux jeux de tests séparés avec quelques fichiers d'illustrations
     - Juste afin de voir si la structure fonctionne correctement
+  - ✅♻️ Refacto avec include ?
+    - dispo dans gitlab (non natif ? chelou, ptet a cause de yml et pas yAml, bref)
+    - "rien" dans github mais en fait sous dossier .github/actions/xxx fait pour ça
 
 ---
 

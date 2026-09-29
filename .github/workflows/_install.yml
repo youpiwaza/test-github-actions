@@ -4,27 +4,14 @@ on:
   workflow_call:
 
 jobs:
+  # Use to pre-fill the cache for install & packages
+  # Sightly optimizing furthers tests speed & ensure constistent env
   install:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: my-project
     steps:
+      # Required before a local composite action
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.21
-
-      - name: Cache Bun packages
-        uses: actions/cache@v5
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-1.2.21-${{ hashFiles('my-project/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-1.2.21-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+      - name: Bun install
+        uses: ./.github/actions/bun-install
