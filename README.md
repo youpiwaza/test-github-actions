@@ -115,14 +115,14 @@ Virtuellement inutile au vu du CI/CD, mais permettra d'avoir de la versatilité 
 - Branches dédiées aux développements spécifiques, scopées
 - Tests effectués lors que des mises à jour sont push
 - Tests effectués lorsque la feature est merge dans dev (avant)
-  - `dev` doit être rebase avant, les conflits sont traités en amont dans les branches `feat`
+  - `dev` doit déjà contenir `main` (`sync-main` après un hotfix). Rebase la feat sur `dev` ; les conflits se traitent sur `feat-*`
 
 ### Branches hotfix `hfix-1234-XXX`
 
 - nom `feat` + n° de ticket Jira + sujet rapide.
 - Exceptionnellement peut être crée à partir de `main` et re-mergée dedans, en vue de correction rapide
   - DOIT toutefois effectuer les tests avant d'être merge, afin de ne pas introduire de nouvelles régréssions lors du FIX
-- Une fois mergée dans `main`, `dev` doit être rebase
+- Une fois mergée dans `main`, `sync-main` met `dev` à jour (PR, pas de push direct)
 
 ---
 
@@ -144,11 +144,7 @@ git checkout dev
 
 - feat-1234-XXX is cut from dev.
 - hfix-1234-XXX is cut from main.
-- 💥 After a hotfix lands on main, rebase dev onto main by hand (manual only ! 💥) :
-
-```bash
-git checkout dev && git rebase main
-```
+- After a hotfix lands on main, `sync-main.yml` opens a PR into `dev`. Do not force-push `dev`.
 
 ##### gitflow implementation through terminal `gh` commands
 
@@ -217,7 +213,7 @@ gh api repos/{owner}/{repo}/rulesets
 ```bash
 # Créer une branche de feat
 git checkout dev
-git checkout -b feat-1234-XXX
+git checkout -b feat-8888-test-demo
 git push -u origin feat-1234-XXX
 
 # Créer une branche de hotfix
@@ -225,26 +221,13 @@ git checkout main
 git checkout -b hfix-1234-XXX
 git push -u origin hfix-1234-XXX
 
-# Rebase de dev sur main
-git checkout main
-git pull origin main
-git checkout dev
-git pull origin dev
-git rebase main
-git push --force-with-lease origin dev
-
 # PR de dev vers main
 gh pr create --base main --head dev
 
-# Rebase d'une feat : d'abord dev sur main, puis la feat sur dev
-git checkout main
-git pull origin main
-git checkout dev
-git pull origin dev
-git rebase main
-git push --force-with-lease origin dev
+# Rebase d'une feat sur dev (dev est mis à jour par sync-main, pas par un push)
+git fetch origin
 git checkout feat-1234-XXX
-git rebase dev
+git rebase origin/dev
 git push --force-with-lease origin feat-1234-XXX
 
 # PR d'une feat vers dev
@@ -316,9 +299,13 @@ Le workflow [`.github/workflows/auto-merge.yml`](.github/workflows/auto-merge.ym
 
 ### 🤖♨️ auto merge de dev vers main quand PR dev OK
 
-Un merge `feat-*` vers `dev` ne merge pas `main` tout seul. [`.github/workflows/promote-dev.yml`](.github/workflows/promote-dev.yml) s'exécute quand cette PR est mergée : il ouvre une PR `dev` vers `main` (ou réutilise celle déjà ouverte) et active l'auto-merge. `gate` tourne une seconde fois. Si `dev` est en retard sur `main`, ça attend un rebase.
+Un merge `feat-*` vers `dev` ne merge pas `main` tout seul. [`.github/workflows/promote-dev.yml`](.github/workflows/promote-dev.yml) s'exécute quand cette PR est mergée : il ouvre une PR `dev` vers `main` (ou réutilise celle déjà ouverte) et active l'auto-merge. `gate` tourne une seconde fois.
 
-Les deux workflows utilisent le secret `PROMOTE_TOKEN` (PAT, scope `repo`). Un merge fait avec `GITHUB_TOKEN` ne déclenche pas le workflow suivant.
+### Sync main vers dev
+
+Un push sur `main` (hotfix ou promote) ne met pas `dev` à jour tout seul, et un `git push` sur `dev` est bloqué. [`.github/workflows/sync-main.yml`](.github/workflows/sync-main.yml) ouvre (ou réutilise) une PR `sync-main` vers `dev`, merge `main` dessus, et active l'auto-merge. `gate` tourne. Un conflit arrête le job. Ce merge n'appelle pas `promote-dev.yml`.
+
+Les workflows auto-merge, promote-dev et sync-main utilisent le secret `PROMOTE_TOKEN` (PAT, scope `repo`). Un merge fait avec `GITHUB_TOKEN` ne déclenche pas le workflow suivant.
 
 GitHub does not issue PROMOTE_TOKEN. You create a personal access token, then save that value as an Actions secret. After it is saved, GitHub never shows it again.
 
@@ -334,7 +321,7 @@ Store it on the repo:
 gh secret set PROMOTE_TOKEN --repo {owner}/{repo}
 ```
 
-- `feat-*` vers `dev`, `dev` ou `hfix-*` vers `main` : `guard` refuse le reste.
+- `feat-*` ou `sync-main` vers `dev` ; `dev` ou `hfix-*` vers `main` : `guard` refuse le reste.
 - Tests en échec : la PR reste ouverte.
 - Branche en retard sur `dev`/`main` : l'auto-merge attend une mise à jour, il ne rebase pas.
 - Le hook local `test:e2e` n'est pas relancé ici. `gate` ne lance pas Playwright.

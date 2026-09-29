@@ -92,7 +92,7 @@ jobs:
     uses: ./.github/workflows/strings.yml
 
   # Pull requests only: allowed source branch, then rebase the target first.
-  # feat-* -> dev ; dev or hfix-* -> main. Still runs on markdown-only PRs.
+  # feat-* or sync-main -> dev ; dev or hfix-* -> main. Still runs on markdown-only PRs.
   guard:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -114,9 +114,9 @@ jobs:
           case "$BASE_REF" in
             dev)
               case "$HEAD_REF" in
-                feat-*) ;;
+                feat-*|sync-main) ;;
                 *)
-                  echo "PRs into dev must come from feat-* (got $HEAD_REF)."
+                  echo "PRs into dev must come from feat-* or sync-main (got $HEAD_REF)."
                   exit 1
                   ;;
               esac
