@@ -16,8 +16,17 @@ jobs:
         working-directory: my-project
     # Installation & packages
     steps:
+      # # Setup Node, not used yet
+      # - name: Setup latest node
+      # - uses: actions/setup-node@v5
+      #   with:
+      #     node-version: 26
+      #     check-latest: true
+      # #    node-version: 26.10.0
+
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
