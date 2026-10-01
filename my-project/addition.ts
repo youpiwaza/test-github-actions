@@ -1,5 +1,5 @@
 function addition(a: number, b: number) {
   // FIX: Une vraie addition
-  return a + b + 1;
+  return a + b;
 }
 export default addition;
